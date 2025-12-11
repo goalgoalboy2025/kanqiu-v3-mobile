@@ -8,18 +8,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # 降级到 ubuntu-20.04，因为 22.04+ 对某些旧版依赖支持不佳，这更稳定
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 必须使用 JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 安装系统依赖 (针对 Ubuntu 20.04 优化)
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -44,23 +46,30 @@ jobs:
             gstreamer1.0-plugins-good \
             libffi-dev \
             libssl-dev \
-            automake \
             autoconf \
+            automake \
             libtool \
             pkg-config \
             cmake \
             zip \
             unzip
 
+      # 安装特定版本的 Buildozer 和 Cython (锁定版本以保证稳定性)
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
-          pip3 install --upgrade buildozer cython virtualenv
+          pip3 install buildozer==1.5.0 cython==0.29.36 virtualenv
 
+      # 清理之前的缓存（如果有）
+      - name: Clean Buildozer
+        run: buildozer android clean
+
+      # 开始构建
+      # 使用 yes | 是为了防止某些极其顽固的 license 提示卡住
+      # 即使我们在 spec 里配置了 True，加上这个也无妨
       - name: Build with Buildozer
         run: |
-          # 之前是 yes | buildozer ... 现在改为直接运行，因为 spec 里配置了自动接受协议
-          buildozer -v android debug
+          yes | buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
