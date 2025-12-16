@@ -8,20 +8,19 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04 # 降级到 ubuntu-20.04，因为 22.04+ 对某些旧版依赖支持不佳，这更稳定
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # 设置30分钟超时，防止卡死
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 必须使用 JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 安装系统依赖 (针对 Ubuntu 20.04 优化)
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -54,19 +53,14 @@ jobs:
             zip \
             unzip
 
-      # 安装特定版本的 Buildozer 和 Cython (锁定版本以保证稳定性)
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
           pip3 install buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      # 清理之前的缓存（如果有）
       - name: Clean Buildozer
         run: buildozer android clean
 
-      # 开始构建
-      # 使用 yes | 是为了防止某些极其顽固的 license 提示卡住
-      # 即使我们在 spec 里配置了 True，加上这个也无妨
       - name: Build with Buildozer
         run: |
           yes | buildozer -v android debug
