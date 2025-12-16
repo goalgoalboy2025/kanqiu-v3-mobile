@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 设置30分钟超时，防止卡死
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -58,11 +58,11 @@ jobs:
           pip3 install --upgrade pip
           pip3 install buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      - name: Clean Buildozer
-        run: buildozer android clean
+      # 删除掉了会报错的 Clean 步骤
 
       - name: Build with Buildozer
         run: |
+          # 首次构建会自动初始化，无需 clean
           yes | buildozer -v android debug
 
       - name: Upload APK
