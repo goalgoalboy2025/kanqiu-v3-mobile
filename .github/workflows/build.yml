@@ -8,18 +8,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04 # 依然使用最稳定的 20.04
-
+    runs-on: ubuntu-latest  # 换回最新版，不用排队！
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 关键步骤：清理空间，防止构建过程中磁盘爆满导致未知错误
+      # 依然清理空间，这个步骤很有用
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
-          android: false # 保留预装的 Android 环境
+          android: false
           dotnet: true
           haskell: true
           large-packages: true
@@ -67,17 +67,15 @@ jobs:
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
-          # 锁定 Buildozer 版本为 1.5.0，这版最稳
+          # 依然锁定版本，保证软件层面兼容
           pip3 install buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      # 关键修改：手动赋予当前目录所有权限，防止 chown 错误
       - name: Fix permissions
         run: |
           sudo chown -R $USER:$USER .
 
       - name: Build with Buildozer
         run: |
-          # 再次确认自动接受协议
           yes | buildozer -v android debug
 
       - name: Upload APK
