@@ -8,13 +8,13 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 1. 自动清理空间（保留）
+      # 1. Free Disk Space (Recommended for Buildozer)
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -26,14 +26,14 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      # 2. 安装 JDK 17
+      # 2. Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. 安装系统依赖
+      # 3. Install System Dependencies (Manual & Robust)
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -66,26 +66,23 @@ jobs:
             zip \
             unzip
 
-      # 4. 安装最新版 Buildozer (不锁版本，使用最新修复版)
+      # 4. Install Buildozer & Cython (Locked Versions for Stability)
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
-          pip3 install buildozer cython==0.29.36
+          pip3 install buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      # 5. 关键修复：强制修改配置文件，开启自动同意协议
-      # 这一步能确保我们不需要用 'yes |' 也能通过协议检查
-      - name: Configure Buildozer
-        run: |
-          # 如果文件里没有这行，或者被注释了，这行命令会确保它开启
-          sed -i 's/# android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
-          sed -i 's/android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
-          # 如果本来就没有这行，追加一行（保险起见）
-          grep -q "android.accept_sdk_license = True" buildozer.spec || echo "android.accept_sdk_license = True" >> buildozer.spec
+      # 5. Clean Buildozer
+      - name: Clean Buildozer
+        run: buildozer android clean
 
-      # 6. 构建 (去掉了 yes | )
+      # 6. Build with Buildozer (Verbose for debugging, No pipe)
       - name: Build with Buildozer
         run: |
-          buildozer android debug
+          # Ensure license acceptance is definitely on
+          sed -i 's/android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+          # Run debug build
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
